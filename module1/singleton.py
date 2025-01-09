@@ -34,6 +34,6 @@ if __name__ == '__main__':
     print(c is d)
 
     # Проверка через импорт
-    import singleton_module
+    from module1 import singleton_module
 
     print(singleton_module.instance is singleton_module.instance)
