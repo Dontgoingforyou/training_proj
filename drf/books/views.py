@@ -22,13 +22,11 @@ class BookViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def buy(self, request, pk=None):
         book = self.get_object()
-        with transaction.atomic():
-            updated = Book.objects.filter(pk=book.pk, count__gt=0).update(count=F('count') - 1)
-            if updated:
-                return Response({"message": "Книга успешно куплена"})
-            else:
-                return Response({"error": "Книги нет в наличии"}, status=status.HTTP_400_BAD_REQUEST)
-
+        if book.count > 0:
+            book.count = F('count') - 1
+            book.save()
+            return Response({"message": "Книга успешно куплена"})
+        return Response({"error": "Книги нет в наличии"}, status=status.HTTP_400_BAD_REQUEST)
 
 class AuthorViewSet(viewsets.ModelViewSet):
     queryset = Author.objects.all()
