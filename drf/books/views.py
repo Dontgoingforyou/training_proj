@@ -5,6 +5,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 from .models import Author, Book
 from .serializers import AuthorSerializer, BookSerializer
+from django.db import transaction
+from django.db.models import F
 
 class BookPagination(PageNumberPagination):
     page_size = 5
@@ -20,11 +22,12 @@ class BookViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def buy(self, request, pk=None):
         book = self.get_object()
-        if book.count > 0:
-            book.count -= 1
-            book.save()
-            return Response({"message": "Книга успешно куплена"})
-        return Response({"error": "Книги нет в наличии"}, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            updated = Book.objects.filter(pk=book.pk, count__gt=0).update(count=F('count') - 1)
+            if updated:
+                return Response({"message": "Книга успешно куплена"})
+            else:
+                return Response({"error": "Книги нет в наличии"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
